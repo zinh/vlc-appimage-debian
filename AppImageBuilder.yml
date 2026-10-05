@@ -1,0 +1,79 @@
+# Values come from build.sh:
+#   VLC_VERSION    upstream version, e.g. 3.0.23
+#   DEB_VERSION    Debian package version, e.g. 3.0.23-0+deb12u1
+#   DEBIAN_SUITE   e.g. bookworm
+#   DEBIAN_MAJOR   e.g. 12 (selects the archive signing keys)
+version: 1
+
+script:
+  - rm -rf AppDir || true
+
+AppDir:
+  path: ./AppDir
+
+  app_info:
+    id: org.videolan.vlc
+    name: VLC
+    icon: vlc
+    version: !ENV ${VLC_VERSION}
+    exec: usr/bin/vlc
+    exec_args: $@
+
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: !ENV deb http://deb.debian.org/debian ${DEBIAN_SUITE} main
+        key_url: !ENV https://ftp-master.debian.org/keys/archive-key-${DEBIAN_MAJOR}.asc
+      - sourceline: !ENV deb http://deb.debian.org/debian ${DEBIAN_SUITE}-updates main
+        key_url: !ENV https://ftp-master.debian.org/keys/release-${DEBIAN_MAJOR}.asc
+      - sourceline: !ENV deb http://deb.debian.org/debian-security ${DEBIAN_SUITE}-security main
+        key_url: !ENV https://ftp-master.debian.org/keys/archive-key-${DEBIAN_MAJOR}-security.asc
+    include:
+      - !ENV vlc=${DEB_VERSION}
+      - !ENV vlc-bin=${DEB_VERSION}
+      - !ENV vlc-data=${DEB_VERSION}
+      - !ENV vlc-plugin-base=${DEB_VERSION}
+      - !ENV vlc-plugin-qt=${DEB_VERSION}
+      - !ENV vlc-plugin-video-output=${DEB_VERSION}
+      - !ENV vlc-l10n=${DEB_VERSION}
+      - !ENV libvlc5=${DEB_VERSION}
+      - !ENV libvlc-bin=${DEB_VERSION}
+      - !ENV libvlccore9=${DEB_VERSION}
+    exclude:
+      # GPU drivers must match the host's kernel/hardware - use the host's
+      - libgl1-mesa-dri
+      - mesa-va-drivers
+      - mesa-vdpau-drivers
+      - mesa-vulkan-drivers
+      - libdrm-amdgpu1
+      - libdrm-intel1
+      - libdrm-nouveau2
+      - libdrm-radeon1
+      - va-driver-all
+      - vdpau-driver-all
+      - i965-va-driver
+      - intel-media-va-driver
+      # unneeded bulk
+      - adwaita-icon-theme
+      - humanity-icon-theme
+
+  after_bundle:
+    # VLC 3 looks for plugins at a compile-time path; build the plugin cache
+    # here so startup inside the AppImage is fast
+    - LD_LIBRARY_PATH=$TARGET_APPDIR/usr/lib/x86_64-linux-gnu:$TARGET_APPDIR/lib/x86_64-linux-gnu $TARGET_APPDIR/usr/lib/x86_64-linux-gnu/vlc/vlc-cache-gen $TARGET_APPDIR/usr/lib/x86_64-linux-gnu/vlc/plugins
+
+  files:
+    exclude:
+      - usr/share/man
+      - usr/share/doc
+      - usr/share/lintian
+
+  runtime:
+    env:
+      VLC_PLUGIN_PATH: $APPDIR/usr/lib/x86_64-linux-gnu/vlc/plugins
+      VLC_DATA_PATH: $APPDIR/usr/share/vlc
+      QT_PLUGIN_PATH: $APPDIR/usr/lib/x86_64-linux-gnu/qt5/plugins
+
+AppImage:
+  arch: x86_64
+  update-information: guess
