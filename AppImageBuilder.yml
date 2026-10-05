@@ -87,6 +87,6 @@ AppDir:
       VLC_DATA_PATH: $APPDIR/usr/share/vlc
       QT_PLUGIN_PATH: $APPDIR/usr/lib/x86_64-linux-gnu/qt5/plugins
 
+# Packing is done by build.sh (zstd + type2 runtime); only arch is used here
 AppImage:
   arch: x86_64
-  update-information: guess

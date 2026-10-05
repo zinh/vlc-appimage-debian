@@ -41,5 +41,16 @@ apt-get install -y -qq --no-install-recommends \
   desktop-file-utils libglib2.0-bin fakeroot gtk-update-icon-cache gnupg zsync binutils >/dev/null
 python3 -m venv /opt/abv
 /opt/abv/bin/pip install -q appimage-builder
-/opt/abv/bin/appimage-builder --recipe AppImageBuilder.yml --skip-tests
+/opt/abv/bin/appimage-builder --recipe AppImageBuilder.yml --skip-tests --skip-appimage
+
+# Pack it ourselves: appimage-builder always uses xz, which is slow to
+# decompress and makes VLC take ~5s to start. zstd needs the type2 runtime
+# (which also works without libfuse2 on the host).
+OUT="VLC-$VLC_VERSION-x86_64.AppImage"
+wget -q -O /tmp/runtime https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+mksquashfs AppDir /tmp/payload.squashfs -root-owned -noappend -reproducible \
+  -comp zstd -Xcompression-level 19 -no-progress
+cat /tmp/runtime /tmp/payload.squashfs > "$OUT"
+chmod +x "$OUT"
+echo "Created $OUT"
 EOF
