@@ -40,19 +40,32 @@ AppDir:
       - !ENV libvlc-bin=${DEB_VERSION}
       - !ENV libvlccore9=${DEB_VERSION}
     exclude:
-      # GPU drivers must match the host's kernel/hardware - use the host's
+      # The OpenGL/EGL stack and Mesa drivers must match the host's
+      # kernel/hardware - use the host's. Bundled, Mesa falls back to software
+      # rendering.
+      - libgl1
+      - libglx0
+      - libegl1
+      - libgles2
+      - libopengl0
+      - libglvnd0
+      - libglx-mesa0
+      - libegl-mesa0
+      - libglapi-mesa
+      - libgbm1
       - libgl1-mesa-dri
       - mesa-va-drivers
       - mesa-vdpau-drivers
       - mesa-vulkan-drivers
       - libdrm-amdgpu1
-      - libdrm-intel1
       - libdrm-nouveau2
       - libdrm-radeon1
-      - va-driver-all
       - vdpau-driver-all
-      - i965-va-driver
+      # VA-API drivers are left out on purpose: VLC 3's VA-API path renders
+      # green frames with current Mesa, so decoding falls back to the CPU
+      - va-driver-all
       - intel-media-va-driver
+      - i965-va-driver
       # unneeded bulk
       - adwaita-icon-theme
       - humanity-icon-theme
